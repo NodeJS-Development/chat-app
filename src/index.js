@@ -18,8 +18,17 @@ app.use(express.static(publicDirectoryPath));
 io.on('connection', (socket) => {
   console.log('New WebSocket connection');
 
-  socket.emit('message', generateMessage('Welcome!'));
-  socket.broadcast.emit('message', generateMessage('A new user has joined!')) // this will send something to every client except this particular socket
+  socket.on('join', ({ username, room }) => {
+    socket.join(room); // Allow us to join a given chat room, we pass the name of the room we are trying to join
+
+    socket.emit('message', generateMessage('Welcome!'));
+    socket.broadcast.to(room).emit('message', generateMessage(`${username} has joined!`)) // this will send something to every client except this particular socket
+
+    // socket.emit, io.emit, socket.broadcast.emit
+    // io.to.emit -> emits event to everybody on an specific room
+    // socket.broadcast.to.emit -> sends event to anyone except this specific client but is limiting it to a specific room
+
+  });
 
   socket.on('sendMessage', (message, cb) => {
     const filter = new Filter();
