@@ -31,6 +31,10 @@ io.on('connection', (socket) => {
 
     socket.emit('message', generateMessage('Admin', 'Welcome!'));
     socket.broadcast.to(user.room).emit('message', generateMessage('Admin', `${user.username} has joined!`)) // this will send something to every client except this particular socket
+    io.to(user.room).emit('roomData', {
+      room: user.room,
+      users: getUsersInRoom(user.room),
+    });
 
     cb();
 
@@ -68,6 +72,10 @@ io.on('connection', (socket) => {
 
     if (user) {
       io.to(user.room).emit('message', generateMessage('Admin', `${user.username} has left!`));
+      io.to(user.room).emit('roomData', {
+        room: user.room,
+        users: getUsersInRoom(user.room),
+      });
     }
 
   });
