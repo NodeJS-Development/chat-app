@@ -5,6 +5,7 @@ const socketio = require('socket.io');
 const Filter = require('bad-words');
 
 const { generateMessage, generateLocationMessage } = require('./utils/messages');
+const { addUser, removeUser, getUser, getUsersInRoom } = require('./utils/users');
 
 const app = express();
 const server = http.createServer(app);
@@ -18,11 +19,20 @@ app.use(express.static(publicDirectoryPath));
 io.on('connection', (socket) => {
   console.log('New WebSocket connection');
 
-  socket.on('join', ({ username, room }) => {
-    socket.join(room); // Allow us to join a given chat room, we pass the name of the room we are trying to join
+  socket.on('join', ({ username, room }, cb) => {
+
+    const { error, user } = addUser({ id: socket.id, username, room });
+
+    if (error) {
+      return cb(error);
+    }
+
+    socket.join(user.room); // Allow us to join a given chat room, we pass the name of the room we are trying to join
 
     socket.emit('message', generateMessage('Welcome!'));
-    socket.broadcast.to(room).emit('message', generateMessage(`${username} has joined!`)) // this will send something to every client except this particular socket
+    socket.broadcast.to(user.room).emit('message', generateMessage(`${user.username} has joined!`)) // this will send something to every client except this particular socket
+
+    cb();
 
     // socket.emit, io.emit, socket.broadcast.emit
     // io.to.emit -> emits event to everybody on an specific room
@@ -49,7 +59,13 @@ io.on('connection', (socket) => {
 
 
   socket.on('disconnect', () => {
-    io.emit('message', generateMessage('A user has left!'));
+
+    const user = removeUser(socket.id);
+
+    if (user) {
+      io.to(user.room).emit('message', generateMessage(`${user.username} has left!`));
+    }
+
   });
 
 
