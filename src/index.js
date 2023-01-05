@@ -4,6 +4,8 @@ const express = require('express');
 const socketio = require('socket.io');
 const Filter = require('bad-words');
 
+const { generateMessage, generateLocationMessage } = require('./utils/messages');
+
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server); // it expects a raw http server, that's why it was necessary to refactor code
@@ -16,8 +18,8 @@ app.use(express.static(publicDirectoryPath));
 io.on('connection', (socket) => {
   console.log('New WebSocket connection');
 
-  socket.emit('message', 'Welcome!');
-  socket.broadcast.emit('message', 'A new user has joined!') // this will send something to every client except this particular socket
+  socket.emit('message', generateMessage('Welcome!'));
+  socket.broadcast.emit('message', generateMessage('A new user has joined!')) // this will send something to every client except this particular socket
 
   socket.on('sendMessage', (message, cb) => {
     const filter = new Filter();
@@ -26,19 +28,19 @@ io.on('connection', (socket) => {
       return cb('Profanity is not allowed!')
     }
 
-    io.emit('message', message);
+    io.emit('message', generateMessage(message));
     cb();
 
   });
 
   socket.on('sendLocation', (coords, cb) => {
-    io.emit('locationMessage', `https://google.com/maps?q=${coords.latitude},${coords.longitude}`);
+    io.emit('locationMessage', generateLocationMessage(`https://google.com/maps?q=${coords.latitude},${coords.longitude}`));
     cb();
   });
 
 
   socket.on('disconnect', () => {
-    io.emit('message', 'A user has left!');
+    io.emit('message', generateMessage('A user has left!'));
   });
 
 
