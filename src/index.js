@@ -16,10 +16,20 @@ io.on('connection', (socket) => {
   console.log('New WebSocket connection');
 
   socket.emit('message', 'Welcome!');
+  socket.broadcast.emit('message', 'A new user has joined!') // this will send something to every client except this particular socket
 
   socket.on('sendMessage', (message) => {
     io.emit('message', message);
   });
+
+  socket.on('sendLocation', (coords) => {
+    io.emit('message', `https://google.com/maps?q=${coords.latitude},${coords.longitude}`);
+  });
+
+  socket.on('disconnect', () => {
+    io.emit('message', 'A user has left!');
+  });
+
 
 });
 
